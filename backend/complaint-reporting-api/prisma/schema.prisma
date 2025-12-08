@@ -1,0 +1,109 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CITIZEN
+  OFFICIAL
+  ADMIN
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id                String      @id @default(uuid())
+  email             String      @unique
+  password          String
+  fullName          String
+  phoneNumber       String?
+  address           String?
+  role              UserRole    @default(CITIZEN)
+  department        String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  complaints        Complaint[]
+  comments          Comment[]
+  assignedComplaints Complaint[] @relation("AssignedOfficialComplaints")
+
+  @@map("users")
+}
+
+model Category {
+  id                String      @id @default(uuid())
+  name              String      @unique
+  description       String?
+
+  complaints        Complaint[]
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@map("categories")
+}
+
+model Complaint {
+  id                String          @id @default(uuid())
+  title             String
+  description       String
+  location          String
+  latitude          Float?
+  longitude         Float?
+  status            ComplaintStatus @default(SUBMITTED)
+  priority          Priority        @default(MEDIUM)
+  imageUrl          String?
+  referenceNumber   String          @unique
+
+  submittedById     String
+  submittedBy       User            @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+
+  categoryId        String
+  category          Category        @relation(fields: [categoryId], references: [id])
+
+  assignedToId      String?
+  assignedTo        User?           @relation("AssignedOfficialComplaints", fields: [assignedToId], references: [id])
+
+  comments          Comment[]
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("complaints")
+}
+
+model Comment {
+  id                String      @id @default(uuid())
+  content           String
+  isInternal        Boolean     @default(false)
+
+  complaintId       String
+  complaint         Complaint   @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  authorId          String
+  author            User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@map("comments")
+}
