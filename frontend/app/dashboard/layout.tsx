@@ -1,108 +1,86 @@
-"use client";
+// app/dashboard/layout.tsx
+"use client"; // <<--- add this
+
 import React, { useState } from "react";
-import { Layout, Menu } from "antd";
 import {
+  FileOutlined,
+  PieChartOutlined,
+  TeamOutlined,
   UserOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { useRouter } from "next/navigation"; 
-const { Header, Sider, Content } = Layout;
-const AppLayout = ({ children }: { children: React.ReactNode }) => {
+import type { MenuProps } from "antd";
+import { Breadcrumb, Layout, Menu, theme } from "antd";
+import Link from "next/link";
+const { Header, Content, Footer, Sider } = Layout;
+
+type MenuItem = Required<MenuProps>["items"][number];
+
+function getItem(
+  label: React.ReactNode,
+  key: React.Key,
+  icon?: React.ReactNode,
+  children?: MenuItem[]
+): MenuItem {
+  return {
+    key,
+    icon,
+    children,
+    label,
+  } as MenuItem;
+}
+
+const items: MenuItem[] = [
+  getItem(<Link href="/dashboard">Home</Link>, "1", <PieChartOutlined />),
+  getItem(<Link href="/dashboard/users">Users</Link>, "2", <UserOutlined />),
+  getItem(
+    <Link href="/dashboard/category">Categories</Link>,
+    "3",
+    <FileOutlined />
+  ),
+  getItem(
+    <Link href="/dashboard/comments">Comments</Link>,
+    "5",
+    <TeamOutlined />
+  ),
+];
+
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const router = useRouter(); 
-
-  // Menu items
-  const items = [
-    {
-      key: "2",
-      icon: <UserOutlined />,
-      label: "Users",
-    },
-  ];
-
-  const handleNavigation = ({ key }: { key: string }) => {
-    if (key === "1") router.push("/dashboard/complaints");
-    if (key === "2") router.push("/dashboard/users");
-  };
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
-        style={{
-          background: "#444",
-        }}
       >
-  
-        <div
-          style={{
-            color: "white",
-            padding: 16,
-            textAlign: "center",
-            fontSize: collapsed ? 18 : 22,
-            fontWeight: "bold",
-          }}
-        >
+        <div style={{ color: "gray", padding: 16, textAlign: "center" }}>
+          {/* brand */}
           {collapsed ? "CRS" : "Complaint Reporting"}
         </div>
-
-      
-        <Menu
-          theme="dark"
-          mode="inline"
-          defaultSelectedKeys={["1"]}
-          items={items}
-          onClick={handleNavigation}   
-          style={{ background: "#444" }}
-        />
+        <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline" items={items} />
       </Sider>
-
-      {/* Main Layout */}
       <Layout>
-        
-        {/* Header */}
-        <Header
-          style={{
-            background: "#fff",
-            padding: "0 16px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-          }}
-        >
-          {collapsed ? (
-            <MenuUnfoldOutlined
-              onClick={() => setCollapsed(false)}
-              style={{ fontSize: 20 }}
-            />
-          ) : (
-            <MenuFoldOutlined
-              onClick={() => setCollapsed(true)}
-              style={{ fontSize: 20 }}
-            />
-          )}
-
-          <div>Welcome, Admin</div>
-        </Header>
-
-        {/* Main Content */}
-        <Content style={{ margin: "16px" }}>
+        <Header style={{ padding: 0, background: colorBgContainer }} />
+        <Content style={{ margin: "0 16px" }}>
+          <Breadcrumb style={{ margin: "16px 0" }} items={[{ title: "Dashboard" }]} />
           <div
             style={{
               padding: 24,
-              background: "#fff",
               minHeight: 360,
-              borderRadius: 8,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
             }}
           >
             {children}
           </div>
         </Content>
+        <Footer style={{ textAlign: "center" }}>
+          Ant Design ©{new Date().getFullYear()} Created by Ant UED
+        </Footer>
       </Layout>
     </Layout>
   );
