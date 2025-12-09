@@ -12,18 +12,29 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen">
       {/* Left Side */}
-      <div className="w-1/2 bg-gray-700 flex items-center justify-center text-white p-8">
-        <div>
+      <div className="hidden md:flex w-full md:w-1/2 bg-gray-700 relative">
+        {/* Back to Home */}
+        <Link
+          href="/"
+          className="absolute top-8 left-8 flex items-center text-white hover:text-gray-300"
+        >
+          <span className="mr-2 text-2xl">←</span> Back to Home
+        </Link>
+
+        {/* Centered Content */}
+        <div className="flex flex-col items-center justify-center h-full text-center text-white px-8">
           <h1 className="text-4xl font-bold mb-4">Welcome Back!</h1>
-          <p className="text-lg">Sign in to access your account and continue where you left off.</p>
+          <p className="text-lg">
+            Sign in to access your account and continue where you left off.
+          </p>
         </div>
       </div>
 
       {/* Right Side */}
-      <div className="w-1/2 flex items-center justify-center bg-gray-100">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-100 p-8">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
           <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -55,7 +66,7 @@ export default function Login() {
           </form>
           <p className="mt-4 text-center text-gray-600">
             Don't have an account?{" "}
-            <Link href="/register" className="text-green-600 hover:underline">
+            <Link href="/register" className="text-green-500 hover:underline">
               Register
             </Link>
           </p>

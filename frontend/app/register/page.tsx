@@ -17,10 +17,21 @@ export default function Register() {
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Left Side */}
-      <div className="hidden md:flex w-full md:w-1/2 bg-gray-700 items-center justify-center text-white p-8">
-        <div>
+      <div className="hidden md:flex w-full md:w-1/2 bg-gray-700 relative">
+        {/* Back to Home */}
+        <Link
+          href="/"
+          className="absolute top-8 left-8 flex items-center text-white hover:text-gray-300"
+        >
+          <span className="mr-2 text-2xl">←</span> Back to Home
+        </Link>
+
+        {/* Centered Content */}
+        <div className="flex flex-col items-center justify-center h-full text-center text-white px-8">
           <h1 className="text-4xl font-bold mb-4">Join Us!</h1>
-          <p className="text-lg">Create an account and start your journey with us today.</p>
+          <p className="text-lg">
+            Create an account and start your journey with us today.
+          </p>
         </div>
       </div>
 
