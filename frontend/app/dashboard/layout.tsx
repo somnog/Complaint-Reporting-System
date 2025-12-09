@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Layout, Menu } from "antd";
 import {
   UserOutlined,
-  FileTextOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
