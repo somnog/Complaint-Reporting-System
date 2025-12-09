@@ -64,9 +64,36 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline" items={items} />
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: colorBgContainer }} />
-        <Content style={{ margin: "0 16px" }}>
-          <Breadcrumb style={{ margin: "16px 0" }} items={[{ title: "Dashboard" }]} />
+        
+        {/* Header */}
+        <Header
+          style={{
+            background: "#fff",
+            padding: "0 16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+          }}
+        >
+          {/* Collapse Button */}
+          {collapsed ? (
+            <MenuUnfoldOutlined
+              onClick={() => setCollapsed(false)}
+              style={{ fontSize: 20 }}
+            />
+          ) : (
+            <MenuFoldOutlined
+              onClick={() => setCollapsed(true)}
+              style={{ fontSize: 20 }}
+            />
+          )}
+
+          <div>Welcome, Admin</div>
+        </Header>
+
+        {/* Main Content */}
+        <Content style={{ margin: "16px" }}>
           <div
             style={{
               padding: 24,
