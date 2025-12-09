@@ -80,7 +80,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
           }}
         >
           {/* Collapse Button */}
