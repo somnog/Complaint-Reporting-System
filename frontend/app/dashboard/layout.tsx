@@ -4,47 +4,41 @@ import { Layout, Menu } from "antd";
 import {
   UserOutlined,
   FileTextOutlined,
-  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
-
+import { useRouter } from "next/navigation"; 
 const { Header, Sider, Content } = Layout;
-
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter(); 
 
+  // Menu items
   const items = [
-    {
-      key: "1",
-      icon: <FileTextOutlined />,
-      label: "Complaints",
-    },
     {
       key: "2",
       icon: <UserOutlined />,
       label: "Users",
     },
-    {
-      key: "3",
-      icon: <LogoutOutlined />,
-      label: "Logout",
-    },
   ];
+
+  const handleNavigation = ({ key }: { key: string }) => {
+    if (key === "1") router.push("/dashboard/complaints");
+    if (key === "2") router.push("/dashboard/users");
+  };
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       
-      {/* Sidebar */}
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         style={{
-          background: "#444", // GRAY SIDEBAR COLOR
+          background: "#444",
         }}
       >
-        {/* Brand / Logo */}
+  
         <div
           style={{
             color: "white",
@@ -57,15 +51,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           {collapsed ? "CRS" : "Complaint Reporting"}
         </div>
 
-        {/* Menu */}
+      
         <Menu
           theme="dark"
           mode="inline"
           defaultSelectedKeys={["1"]}
           items={items}
-          style={{
-            background: "#444", // match sidebar
-          }}
+          onClick={handleNavigation}   
+          style={{ background: "#444" }}
         />
       </Sider>
 
@@ -83,7 +76,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
           }}
         >
-          {/* Collapse Button */}
           {collapsed ? (
             <MenuUnfoldOutlined
               onClick={() => setCollapsed(false)}

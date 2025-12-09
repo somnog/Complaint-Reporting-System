@@ -42,7 +42,7 @@ const columns = [
     },
   },
   { title: "Priority", dataIndex: "priority", key: "priority", render: (p: string) => <Tag>{p}</Tag> },
-];
+];  
 
 export default function DashboardPage() {
   return (
