@@ -1,5 +1,5 @@
 import Image from "next/image";
-
+import { Send, Search } from "lucide-react";
 const HeroSection = () => {
   return (
     <section className="bg-white shadow-md max-w-6xl mx-auto rounded-xl mt-14 text-gray-900 py-20 relative overflow-hidden">
@@ -18,27 +18,21 @@ const HeroSection = () => {
             and track government responses. Your voice matters let’s build a better nation together.
           </p>
 
-          {/* Buttons */}
-          <div className="mt-8 flex justify-center md:justify-start gap-4">
+          <div className="flex flex-col md:flex-row justify-center gap-4 mt-8">
+          
+          {/* Submit Button */}
+          <button className="bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold text-lg shadow hover:bg-gray-200 transition flex items-center gap-2 justify-center">
+            <Send size={20} />
+            Submit a Complaint
+          </button>
 
-            {/* Submit Complaint Button */}
-            <a
-              href="/complaints/new"
-              className="px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold shadow 
-                        hover:bg-blue-800 transition"
-            >
-              Submit Complaint
-            </a>
+          {/* Track Case Button */}
+          <button className="bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow hover:bg-gray-700 transition flex items-center gap-2 justify-center">
+            <Search size={20} />
+            Track Your Case
+          </button>
 
-            {/* Track Complaint Button */}
-            <a
-              href="/complaints/track"
-              className="px-6 py-3 border border-gray-400 rounded-lg font-semibold 
-                        hover:border-blue-700 hover:text-blue-800 transition"
-            >
-              Track Complaint
-            </a>
-          </div>
+        </div>
         </div>
 
         {/* Right Illustration */}
