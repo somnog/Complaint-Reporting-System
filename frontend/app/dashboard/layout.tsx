@@ -87,7 +87,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           {collapsed ? (
             <MenuUnfoldOutlined
               onClick={() => setCollapsed(false)}
-              style={{ fontSize: 20 }}
+              style={{ fontSize: 30 }}
             />
           ) : (
             <MenuFoldOutlined
