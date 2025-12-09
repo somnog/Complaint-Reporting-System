@@ -31,6 +31,12 @@ const testimonials = [
     image: "/Ayoub.jpg",
     text: "Fast responses and a transparent system. This is exactly what our country needed."
   },
+    {
+    name: "Ayan Aden",
+    role: "Entrepreneur",
+    image: "/ayan.jpg",
+    text: " The user-friendly interface makes it simple for anyone to report issues. Love it!"
+  },
 ];
 
 const TestimonialSection = () => {
