@@ -14,7 +14,7 @@ const NavBar = () => {
         </div>
 
         {/* Auth Button */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-3 items-center">
           <Link
             href="/login"
             className="px-5 py-2.5 rounded-lg border border-gray-400 text-gray-900 font-semibold 
