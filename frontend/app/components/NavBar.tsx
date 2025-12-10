@@ -13,10 +13,7 @@ const NavBar = () => {
           </h1>
         </div>
 
-<<<<<<< HEAD
-        {/* Auth Button */}
-        <div className="flex gap-3 items-center">
-=======
+        {/* Navigation Links */}
         <div className="flex items-center gap-6">
           <Link
             href="/"
@@ -35,7 +32,6 @@ const NavBar = () => {
 
         {/* Auth Buttons */}
         <div className="flex gap-2 items-center">
->>>>>>> 729f06444fe8cbb43c538b60e18abb12b54d5100
           <Link
             href="/login"
             className="px-5 py-2.5 rounded-lg border border-gray-400 text-gray-900 font-semibold 

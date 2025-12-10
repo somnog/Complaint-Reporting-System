@@ -1,9 +1,12 @@
-import React from 'react'
+"use client";
 
-const UsersPage = () => {
+import UsersTable from "./layout";
+
+
+export default function UsersPage() {
   return (
-    <div>UsersPage</div>
-  )
+    <div>
+      <UsersTable />
+    </div>
+  );
 }
-
-export default UsersPage

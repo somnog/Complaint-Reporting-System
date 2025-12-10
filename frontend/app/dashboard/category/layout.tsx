@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Input, Space, Popconfirm, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import axios from "axios";
 
 type CategoryType = {
   id: string;
@@ -10,60 +11,92 @@ type CategoryType = {
   description?: string;
 };
 
-const initialCategories: CategoryType[] = [
-  { id: "1", name: "Roads", description: "Road and traffic issues" },
-  { id: "2", name: "Water", description: "Water supply issues" },
-  { id: "3", name: "Electricity", description: "Power outage and wiring issues" },
-  { id: "4", name: "Sanitation", description: "Garbage collection and sewage issues" },
-  { id: "5", name: "Public Safety", description: "Crimes, hazards, insecure areas" },
-];
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+});
+
+// Automatically attach token if you use auth
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export default function CategoriesPage() {
-  const [data, setData] = useState<CategoryType[]>(initialCategories);
+  const [data, setData] = useState<CategoryType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryType | null>(null);
   const [form] = Form.useForm();
 
-  const openCreate = () => {
+  // Fetch categories from backend
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/categories");
+      // Assuming your API response structure: { data: CategoryType[], meta: {...} }
+      setData(res.data.data || []);
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to fetch categories");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const openCreateModal = () => {
     setEditing(null);
     form.resetFields();
-    setOpen(true);
+    setModalOpen(true);
   };
 
-  const openEdit = (record: CategoryType) => {
+  const openEditModal = (record: CategoryType) => {
     setEditing(record);
     form.setFieldsValue({ name: record.name, description: record.description });
-    setOpen(true);
+    setModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setData((prev) => prev.filter((c) => c.id !== id));
-    message.success("Category deleted");
+  const handleDelete = async (id: string) => {
+    setLoading(true);
+    try {
+      await api.delete(`/categories/${id}`);
+      setData((prev) => prev.filter((c) => c.id !== id));
+      message.success("Category deleted");
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to delete category");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: { name: string; description?: string }) => {
     setLoading(true);
     try {
       if (editing) {
-        // Edit existing
-        setData((prev) => prev.map((c) => (c.id === editing.id ? { ...c, ...values } : c)));
+        // PATCH update
+        const res = await api.patch(`/categories/${editing.id}`, values);
+        setData((prev) =>
+          prev.map((c) => (c.id === editing.id ? res.data : c))
+        );
         message.success("Category updated");
       } else {
-        // Create new (generate simple id)
-        const newItem: CategoryType = {
-          id: String(Date.now()),
-          name: values.name,
-          description: values.description,
-        };
-        setData((prev) => [newItem, ...prev]);
+        // POST create
+        const res = await api.post("/categories", values);
+        setData((prev) => [res.data, ...prev]);
         message.success("Category created");
       }
-      setOpen(false);
+      setModalOpen(false);
       form.resetFields();
-    } catch (err) {
-      console.error(err);
-      message.error("Something went wrong");
+    } catch (error) {
+      console.error(error);
+      message.error("Operation failed");
     } finally {
       setLoading(false);
     }
@@ -80,7 +113,7 @@ export default function CategoriesPage() {
       title: "Description",
       dataIndex: "description",
       key: "description",
-      render: (text) => text ?? "-",
+      render: (text) => text || "-",
     },
     {
       title: "Action",
@@ -88,7 +121,7 @@ export default function CategoriesPage() {
       width: 200,
       render: (_, record) => (
         <Space>
-          <Button type="link" onClick={() => openEdit(record)}>
+          <Button type="link" onClick={() => openEditModal(record)}>
             Edit
           </Button>
           <Popconfirm
@@ -109,12 +142,10 @@ export default function CategoriesPage() {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={openCreate}>
+        <Button type="primary" onClick={openCreateModal}>
           New Category
         </Button>
-        <Button onClick={() => { setData(initialCategories); message.success("Reset to initial data"); }}>
-          Reset
-        </Button>
+        <Button onClick={fetchCategories}>Refresh</Button>
       </Space>
 
       <Table<CategoryType>
@@ -127,13 +158,20 @@ export default function CategoriesPage() {
 
       <Modal
         title={editing ? "Edit Category" : "Create Category"}
-        open={open}
-        onCancel={() => { setOpen(false); form.resetFields(); }}
+        open={modalOpen}
+        onCancel={() => {
+          setModalOpen(false);
+          form.resetFields();
+        }}
         footer={null}
-        destroyOnHidden   // ✅ FIXED HERE
-        >
+        destroyOnClose
+      >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="name" label="Name" rules={[{ required: true, message: "Fadlan gali magaca category" }]}>
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: "Fadlan gali magaca category" }]}
+          >
             <Input placeholder="Category name" />
           </Form.Item>
 
@@ -146,7 +184,14 @@ export default function CategoriesPage() {
               <Button htmlType="submit" type="primary" loading={loading}>
                 {editing ? "Update" : "Create"}
               </Button>
-              <Button onClick={() => { setOpen(false); form.resetFields(); }}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setModalOpen(false);
+                  form.resetFields();
+                }}
+              >
+                Cancel
+              </Button>
             </Space>
           </Form.Item>
         </Form>

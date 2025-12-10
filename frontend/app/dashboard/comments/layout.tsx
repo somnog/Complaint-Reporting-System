@@ -7,225 +7,179 @@ import {
   Modal,
   Form,
   Input,
-  Select,
   Space,
   Popconfirm,
-  Tag,
   message,
+  Checkbox,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import axios from "axios";
+import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 
-type CommentItem = {
+type CommentType = {
   id: string;
   content: string;
   isInternal: boolean;
-  complaint?: { id: string; title?: string; referenceNumber?: string } | null;
-  author?: { id: string; fullName?: string; email?: string } | null;
-  createdAt?: string;
-  updatedAt?: string;
+  complaintId: string;
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    fullName: string;
+  };
+  complaint: {
+    id: string;
+    title: string;
+  };
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+});
 
-const initialComments: CommentItem[] = [
-  {
-    id: "c1",
-    content: "Wadada waxay leedahay daloolo badan oo halis ah.",
-    isInternal: false,
-    complaint: { id: "cmp1", title: "Potholes on Main Road", referenceNumber: "REF-001" },
-    author: { id: "u1", fullName: "Mohamed Dacar" },
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "c2",
-    content: "Official note: team dispatched, awaiting parts.",
-    isInternal: true,
-    complaint: { id: "cmp1", title: "Potholes on Main Road", referenceNumber: "REF-001" },
-    author: { id: "u2", fullName: "Eng Said" },
-    createdAt: new Date().toISOString(),
-  },
-];
-
-export default function CommentsPage() {
-  const [data, setData] = useState<CommentItem[]>(initialComments);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<CommentItem | null>(null);
-  const [form] = Form.useForm();
-  const [filter, setFilter] = useState<"all" | "internal" | "public">("all");
-
-  async function fetchComments() {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/comments`).catch(() => null);
-      if (!res || !res.ok) {
-        // fallback to local mock data
-        setData(initialComments);
-      } else {
-        const json = await res.json();
-        setData(json);
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to load comments, using local data.");
-      setData(initialComments);
-    } finally {
-      setLoading(false);
-    }
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  useEffect(() => {
-    // load comments on mount
-    fetchComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const currentComplaintId = "7dd68b10-cc67-4fc6-b28e-8d879e04f243";
+const currentUserId = "2f3bb45c-7467-4af8-bdf0-6b5ab764fd40";
 
-  const openCreate = () => {
-    setEditing(null);
-    form.resetFields();
-    setOpen(true);
+export default function CommentsTable() {
+  const [data, setData] = useState<CommentType[]>([]);
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<CommentType | null>(null);
+  const [form] = Form.useForm();
+
+  const fetchComments = async () => {
+    setFetchLoading(true);
+    try {
+      const res = await api.get("/comments");
+      // FIX: backend returns array directly in res.data (no .data)
+      setData(res.data || []);
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to fetch comments");
+    } finally {
+      setFetchLoading(false);
+    }
   };
 
-  const openEdit = (record: CommentItem) => {
+  useEffect(() => {
+    fetchComments();
+  }, []);
+
+  const openCreateModal = () => {
+    setEditing(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const openEditModal = (record: CommentType) => {
     setEditing(record);
     form.setFieldsValue({
       content: record.content,
       isInternal: record.isInternal,
-      complaintId: record.complaint?.id,
-      authorId: record.author?.id,
     });
-    setOpen(true);
+    setModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
+    setFetchLoading(true);
     try {
-      // attempt backend delete
-      const res = await fetch(`${API_BASE}/api/comments/${id}`, { method: "DELETE" }).catch(() => null);
-      if (res && res.ok) {
-        message.success("Comment deleted");
-      } else {
-        message.success("Comment removed locally");
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to delete on server; removed locally");
-    } finally {
+      await api.delete(`/comments/${id}`);
       setData((prev) => prev.filter((c) => c.id !== id));
+      message.success("Comment deleted");
+    } catch (error) {
+      console.error(error);
+      message.error("Failed to delete comment");
+    } finally {
+      setFetchLoading(false);
     }
   };
 
-  const handleSubmit = async (values: any) => {
-    setLoading(true);
+  const handleSubmit = async (values: { content: string; isInternal: boolean }) => {
+    setSubmitLoading(true);
     try {
-      const payload = {
-        content: values.content,
-        isInternal: !!values.isInternal,
-        complaintId: values.complaintId,
-        authorId: values.authorId,
-      };
-
       if (editing) {
-        // try server update
-        const res = await fetch(`${API_BASE}/api/comments/${editing.id}`, {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(() => null);
-
-        if (res && res.ok) {
-          const updated = await res.json();
-          setData((prev) => prev.map((c) => (c.id === editing.id ? updated : c)));
-          message.success("Comment updated");
-        } else {
-          // update locally if server not available
-          setData((prev) => prev.map((c) => (c.id === editing.id ? { ...c, ...payload } : c)));
-          message.success("Comment updated locally");
-        }
+        const res = await api.patch(`/comments/${editing.id}`, values);
+        setData((prev) =>
+          prev.map((c) => (c.id === editing.id ? res.data : c))
+        );
+        message.success("Comment updated");
       } else {
-        const res = await fetch(`${API_BASE}/api/comments`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(() => null);
-
-        let created: CommentItem;
-        if (res && res.ok) {
-          created = await res.json();
-        } else {
-          // local fallback: create fake id & timestamps
-          created = {
-            id: `local-${Date.now()}`,
-            content: payload.content,
-            isInternal: payload.isInternal,
-            complaint: { id: payload.complaintId, title: "Unknown" },
-            author: { id: payload.authorId, fullName: "Unknown" },
-            createdAt: new Date().toISOString(),
-          };
-        }
-        setData((prev) => [created, ...prev]);
+        const payload = {
+          ...values,
+          complaintId: currentComplaintId,
+          authorId: currentUserId,
+        };
+        const res = await api.post("/comments", payload);
+        setData((prev) => [res.data, ...prev]);
         message.success("Comment created");
       }
-      setOpen(false);
+      setModalOpen(false);
       form.resetFields();
-      setEditing(null);
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to save comment");
+    } catch (error) {
+      console.error(error);
+      message.error("Operation failed");
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   };
 
-  const columns: ColumnsType<CommentItem> = [
+  const columns: ColumnsType<CommentType> = [
     {
       title: "Content",
       dataIndex: "content",
       key: "content",
-      render: (text: string) => <div style={{ maxWidth: 420, whiteSpace: "pre-wrap" }}>{text}</div>,
-    },
-    {
-      title: "Complaint",
-      dataIndex: ["complaint", "title"],
-      key: "complaint",
-      render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{record.complaint?.title ?? "-"}</div>
-          <div style={{ fontSize: 12, color: "#666" }}>{record.complaint?.referenceNumber ?? ""}</div>
-        </div>
-      ),
     },
     {
       title: "Author",
       dataIndex: ["author", "fullName"],
       key: "author",
-      render: (v, record) => record.author?.fullName ?? "-",
+      render: (text) => <strong>{text}</strong>,
     },
     {
-      title: "Type",
+      title: "Complaint Title",
+      dataIndex: ["complaint", "title"],
+      key: "complaintTitle",
+    },
+    {
+      title: "Internal",
       dataIndex: "isInternal",
       key: "isInternal",
-      render: (v: boolean) => (v ? <Tag color="red">Internal</Tag> : <Tag color="green">Public</Tag>),
+      render: (value: boolean) =>
+        value ? (
+          <CheckOutlined style={{ color: "green" }} />
+        ) : (
+          <CloseOutlined style={{ color: "red" }} />
+        ),
     },
     {
-      title: "Created",
+      title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (v: string | undefined) => (v ? new Date(v).toLocaleString() : "-"),
+      render: (text) => new Date(text).toLocaleString(),
     },
     {
-      title: "Action",
-      key: "action",
-      width: 180,
+      title: "Actions",
+      key: "actions",
       render: (_, record) => (
         <Space>
-          <Button type="link" onClick={() => openEdit(record)}>
+          <Button type="link" onClick={() => openEditModal(record)}>
             Edit
           </Button>
           <Popconfirm
-            title="Ma hubtaa inaad tirtirto comment-kan?"
+            title="Are you sure to delete this comment?"
             onConfirm={() => handleDelete(record.id)}
-            okText="Haa"
-            cancelText="Maya"
+            okText="Yes"
+            cancelText="No"
           >
             <Button type="link" danger>
               Delete
@@ -236,73 +190,63 @@ export default function CommentsPage() {
     },
   ];
 
-  const filteredData = data.filter((c) =>
-    filter === "all" ? true : filter === "internal" ? c.isInternal : !c.isInternal
-  );
-
   return (
-    <div>
+    <>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={openCreate}>
+        <Button type="primary" onClick={openCreateModal}>
           New Comment
         </Button>
-        <Select value={filter} onChange={(v) => setFilter(v)} style={{ width: 160 }}>
-          <Select.Option value="all">All</Select.Option>
-          <Select.Option value="public">Public</Select.Option>
-          <Select.Option value="internal">Internal</Select.Option>
-        </Select>
-        <Button onClick={fetchComments}>Refresh</Button>
+        <Button onClick={fetchComments} loading={fetchLoading}>
+          Refresh
+        </Button>
       </Space>
 
-      <Table
+      <Table<CommentType>
         rowKey="id"
         columns={columns}
-        dataSource={filteredData}
-        loading={loading}
+        dataSource={data}
+        loading={fetchLoading}
         pagination={{ pageSize: 8 }}
       />
 
       <Modal
         title={editing ? "Edit Comment" : "Create Comment"}
-        open={open}
+        open={modalOpen}
         onCancel={() => {
-          setOpen(false);
+          setModalOpen(false);
           form.resetFields();
-          setEditing(null);
         }}
         footer={null}
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="content" label="Content" rules={[{ required: true, message: "Fadlan geli content" }]}>
+          <Form.Item
+            name="content"
+            label="Content"
+            rules={[{ required: true, message: "Please enter comment content" }]}
+          >
             <Input.TextArea rows={4} />
           </Form.Item>
 
-          <Form.Item name="complaintId" label="Complaint ID" rules={[{ required: true }]}>
-            <Input placeholder="Enter complaint id (or connect to select list)" />
-          </Form.Item>
-
-          <Form.Item name="authorId" label="Author ID" rules={[{ required: true }]}>
-            <Input placeholder="Enter author user id" />
-          </Form.Item>
-
-          <Form.Item name="isInternal" label="Is Internal" initialValue={false}>
-            <Select>
-              <Select.Option value={false}>Public</Select.Option>
-              <Select.Option value={true}>Internal</Select.Option>
-            </Select>
+          <Form.Item
+            name="isInternal"
+            label="Internal Comment"
+            valuePropName="checked"
+          >
+            <Checkbox />
           </Form.Item>
 
           <Form.Item>
             <Space>
-              <Button htmlType="submit" type="primary" loading={loading}>
+              <Button htmlType="submit" type="primary" loading={submitLoading}>
                 {editing ? "Update" : "Create"}
               </Button>
               <Button
                 onClick={() => {
-                  setOpen(false);
+                  setModalOpen(false);
                   form.resetFields();
                 }}
+                disabled={submitLoading}
               >
                 Cancel
               </Button>
@@ -310,6 +254,6 @@ export default function CommentsPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 }

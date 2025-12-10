@@ -1,9 +1,11 @@
-import React from 'react'
+"use client";
 
-const CommentsPage = () => {
+import CommentsTable from "./layout";
+
+export default function CommentsPage() {
   return (
-    <div>CommentsPage</div>
-  )
+    <div>
+      <CommentsTable />
+    </div>
+  );
 }
-
-export default CommentsPage

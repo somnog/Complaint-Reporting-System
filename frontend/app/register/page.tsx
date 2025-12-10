@@ -1,24 +1,60 @@
 "use client";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Register() {
-  const [name, setName] = useState("");
+  const router = useRouter();
+
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [error, setError] = useState("");
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Registration data:", { name, email, password, phone, role });
+    setError("");
+
+    try {
+      const res = await fetch("http://localhost:3000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          phoneNumber,
+          address,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        setError(errorData.message || "Registration failed");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Save token + user data
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Try again.");
+    }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Left Side */}
       <div className="hidden md:flex w-full md:w-1/2 bg-gray-700 relative">
-        {/* Back to Home */}
         <Link
           href="/"
           className="absolute top-8 left-8 flex items-center text-white hover:text-gray-300"
@@ -26,11 +62,10 @@ export default function Register() {
           <span className="mr-2 text-2xl">←</span> Back to Home
         </Link>
 
-        {/* Centered Content */}
         <div className="flex flex-col items-center justify-center h-full text-center text-white px-8">
           <h1 className="text-4xl font-bold mb-4">Join Us!</h1>
           <p className="text-lg">
-            Create an account and start your journey with us today.
+            Create an account and start submitting complaints today.
           </p>
         </div>
       </div>
@@ -39,17 +74,21 @@ export default function Register() {
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-100 p-8">
         <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
           <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
+
           <form onSubmit={handleRegister} className="space-y-4">
+            {/* Full name */}
             <div>
-              <label className="block text-gray-700">Name</label>
+              <label className="block text-gray-700">Full Name</label>
               <input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
+
+            {/* Email */}
             <div>
               <label className="block text-gray-700">Email</label>
               <input
@@ -60,6 +99,8 @@ export default function Register() {
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
+
+            {/* Password */}
             <div>
               <label className="block text-gray-700">Password</label>
               <input
@@ -70,30 +111,35 @@ export default function Register() {
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
+
+            {/* Phone */}
             <div>
-              <label className="block text-gray-700">Phone</label>
+              <label className="block text-gray-700">Phone Number</label>
               <input
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
+
+            {/* Address */}
             <div>
-              <label className="block text-gray-700">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                required
+              <label className="block text-gray-700">Address (optional)</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select role</option>
-                <option value="User">User</option>
-                <option value="Admin">Admin</option>
-                <option value="Moderator">Moderator</option>
-              </select>
+              />
             </div>
+
+            {/* Error message */}
+            {error && (
+              <p className="text-red-500 text-center font-medium">{error}</p>
+            )}
+
+            {/* Submit button */}
             <button
               type="submit"
               className="w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-800 transition"
@@ -101,6 +147,7 @@ export default function Register() {
               Register
             </button>
           </form>
+
           <p className="mt-4 text-center text-gray-600">
             Already have an account?{" "}
             <Link href="/login" className="text-green-500 hover:underline">

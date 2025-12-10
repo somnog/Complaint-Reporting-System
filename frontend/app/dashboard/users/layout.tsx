@@ -1,65 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
-import { Table, Space, Button, Modal, Form, Input } from "antd";
+import React, { useEffect, useState } from "react";
+import { Table, Space, Button, Modal, Form, Input, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-
-interface DataType {
-  key: string;
-  fullname: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-  department: string;
-}
-
+import userService, { User } from "@/app/services/userService";
 const UsersTable: React.FC = () => {
-  const [data, setData] = useState<DataType[]>([
-    {
-      key: "1",
-      fullname: "Mohamed Dacar",
-      email: "m.dacar@example.com",
-      phoneNumber: "0617791483",
-      address: "Wadajir, Muqdisho",
-      department: "IT / Engineering",
-    },
-    {
-      key: "2",
-      fullname: "Mohamed Noor",
-      email: "m.noor@example.com",
-      phoneNumber: "0615000001",
-      address: "Hodan, Muqdisho",
-      department: "HR",
-    },
-    {
-      key: "3",
-      fullname: "Eng Said",
-      email: "eng.said@example.com",
-      phoneNumber: "0615000002",
-      address: "Banaadir, Muqdisho",
-      department: "Engineering",
-    },
-    {
-      key: "4",
-      fullname: "Ayaan Ahmed",
-      email: "ayaan@example.com",
-      phoneNumber: "0615000003",
-      address: "Waberi, Muqdisho",
-      department: "Finance",
-    },
-    {
-      key: "5",
-      fullname: "Faysal Ali",
-      email: "faysal@example.com",
-      phoneNumber: "0615000004",
-      address: "KM4, Muqdisho",
-      department: "Management",
-    },
-  ]);
-
+  const [data, setData] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<DataType | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
+
+  // Load users from API
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const users = await userService.getAll();
+      setData(users);
+    } catch (error) {
+      message.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   // Open Add User Modal
   const openAddModal = () => {
@@ -69,34 +36,36 @@ const UsersTable: React.FC = () => {
   };
 
   // Open Edit User Modal
-  const openEditModal = (record: DataType) => {
+  const openEditModal = (record: User) => {
     setEditingUser(record);
     form.setFieldsValue(record);
     setIsModalOpen(true);
   };
 
-  // Delete User
-  const deleteUser = (key: string) => {
-    setData((prev) => prev.filter((user) => user.key !== key));
+  // Delete user (locally for now)
+  const deleteUser = (id: string) => {
+    setData((prev) => prev.filter((user) => user.id !== id));
+    message.success("User deleted (locally)");
   };
 
-  // Submit Form (Add or Edit)
+  // Submit Add/Edit form
   const handleOk = () => {
     form.validateFields().then((values) => {
       if (editingUser) {
-        // Update Existing User
+        // Update locally
         setData((prev) =>
-          prev.map((user) =>
-            user.key === editingUser.key ? { ...editingUser, ...values } : user
-          )
+          prev.map((user) => (user.id === editingUser.id ? { ...user, ...values } : user))
         );
+        message.success("User updated (locally)");
       } else {
-        // Add New User
-        const newUser: DataType = {
+        // Add new user locally (generate temporary id)
+        const newUser: User = {
+          id: Date.now().toString(),
+          role: "CITIZEN", // default role or adapt accordingly
           ...values,
-          key: Date.now().toString(),
         };
         setData((prev) => [...prev, newUser]);
+        message.success("User added (locally)");
       }
 
       setIsModalOpen(false);
@@ -104,24 +73,29 @@ const UsersTable: React.FC = () => {
     });
   };
 
-  const columns: ColumnsType<DataType> = [
+  const columns: ColumnsType<User> = [
     {
       title: "Full Name",
-      dataIndex: "fullname",
-      key: "fullname",
+      dataIndex: "fullName",
+      key: "fullName",
       render: (text: string) => <strong>{text}</strong>,
     },
     { title: "Email", dataIndex: "email", key: "email" },
     { title: "Phone Number", dataIndex: "phoneNumber", key: "phoneNumber" },
     { title: "Address", dataIndex: "address", key: "address" },
-    { title: "Department", dataIndex: "department", key: "department" },
+    {
+      title: "Department",
+      dataIndex: "department",
+      key: "department",
+      render: (dep) => dep || "-",
+    },
     {
       title: "Actions",
       key: "action",
       render: (_, record) => (
         <Space size="middle">
           <a onClick={() => openEditModal(record)}>Edit</a>
-          <a onClick={() => deleteUser(record.key)} style={{ color: "red" }}>
+          <a onClick={() => deleteUser(record.id)} style={{ color: "red" }}>
             Delete
           </a>
         </Space>
@@ -137,7 +111,7 @@ const UsersTable: React.FC = () => {
         Add User
       </Button>
 
-      <Table<DataType> columns={columns} dataSource={data} />
+      <Table<User> columns={columns} dataSource={data} rowKey="id" loading={loading} />
 
       {/* Add/Edit Modal */}
       <Modal
@@ -147,7 +121,7 @@ const UsersTable: React.FC = () => {
         onCancel={() => setIsModalOpen(false)}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="fullname" label="Full Name" rules={[{ required: true }]}>
+          <Form.Item name="fullName" label="Full Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
 
@@ -163,7 +137,7 @@ const UsersTable: React.FC = () => {
             <Input />
           </Form.Item>
 
-          <Form.Item name="department" label="Department" rules={[{ required: true }]}>
+          <Form.Item name="department" label="Department">
             <Input />
           </Form.Item>
         </Form>
